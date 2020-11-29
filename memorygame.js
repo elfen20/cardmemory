@@ -7,7 +7,7 @@ class MemoryGame {
         this.root = document.getElementById("memory-game");
         this.bgimage = document.getElementById("memory-bg");
         this.images = this.root.getElementsByClassName("memory-img");
-        this.fieldSpaces = [];
+        this.turnedFields = [];
     }
 
     shuffle(a, b) {
@@ -32,30 +32,40 @@ class MemoryGame {
         return this.createElement('div', classname);
     }
 
-    fadeOut(element, callBack) {
-        element.style.opacity = "0";
-    }
-
-    turnOn(element) {
-        element.style.visibility = "visible";
+    turnToShow(element) {
+        element.style.transition = "left 1s ease-out 1s, width 1s ease-out 1s"
+//        element.style.visibility = "visible";
         element.style.width = "100%";
         element.style.left = "0%";
     }
 
-    turnOff(element) {
+    turnToHide(element) {
+        element.style.transition = "left 1s ease-in, width 1s ease-in"
         element.style.width = "0%";
         element.style.left = "50%";
     }
 
-    turnCardFront(cardImage, bgImage) {
-        memorygame.turnOff(bgImage);
-        window.setTimeout(function() {memorygame.turnOn(cardImage); }, 1000);
+/*
+    turnCard(elementToHide, elementToShow) {
+        memorygame.turnToHide(elementToHide);
+        memorygame.turnToShow(elementToShow);
+        window.setTimeout(function() {memorygame.checkGame(); }, 1000);
     }
+    */
 
-    turnCardBack(fieldElement) {
+    showCard(fieldElement) {
         var cardImage = fieldElement.querySelector('.memory-card');
         var bgImage = fieldElement.querySelector('.memory-card-back');
+        memorygame.turnToHide(bgImage);
+        memorygame.turnToShow(cardImage);
+        window.setTimeout(memorygame.checkGame, 1000);
+    }
 
+    hideCard(fieldElement) {
+        var cardImage = fieldElement.querySelector('.memory-card');
+        var bgImage = fieldElement.querySelector('.memory-card-back');
+        memorygame.turnToHide(cardImage);
+        memorygame.turnToShow(bgImage);
     }
 
 
@@ -66,13 +76,15 @@ class MemoryGame {
     }
 
     onClickField(data) {
+        if (memorygame.busy) return;
         var fieldElement = data.target.parentElement
         console.log(fieldElement);
-        var cardImage = fieldElement.querySelector('.memory-card');
-        var bgImage = fieldElement.querySelector('.memory-card-back');
+        if ((memorygame.turnedFields.length == 1) && (memorygame.turnedFields[0] == fieldElement)) return;
+        memorygame.turnedFields.push(fieldElement);
+        memorygame.busy = true;        
         //fieldElement.style.visibility = "hidden";
         //memorygame.fadeOut(fieldElement);
-        memorygame.turnCardFront(cardImage, bgImage);
+        memorygame.showCard(fieldElement);
     }
 
     generateCardBack(index) {
@@ -103,6 +115,26 @@ class MemoryGame {
             i++;
         }
     }
+    resetTurnedCards() {
+        memorygame.hideCard(memorygame.turnedFields[0]);
+        memorygame.hideCard(memorygame.turnedFields[1]);
+        window.setTimeout(function() { 
+            memorygame.turnedFields = [];
+            memorygame.busy=false; 
+        }, 1000);
+    }
+
+
+    checkGame() {
+        if (memorygame.turnedFields.length !== 2) {
+            memorygame.busy = false;
+            return;
+        } 
+        // no match
+        window.setTimeout(function() { 
+            memorygame.resetTurnedCards();
+        }, 3000);
+    }
 
     isValidGame() {
         var sqr = Math.sqrt(this.images.length * 2);
@@ -115,6 +147,7 @@ class MemoryGame {
         if (this.isValidGame()) {
             this.generatePlayingField();
             this.bgimage.style.visibility = "hidden";
+            this.busy = false;
         }
         else {
             console.log("Error: Image count has to be a half of a square number!")
