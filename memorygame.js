@@ -20,32 +20,65 @@ class MemoryGame {
         }
     }
 
-    createElement(type, classname, child) {
+    createElement(type, classname) {
         var el = document.createElement(type);
         if (typeof classname !== 'undefined') {
             el.className = classname;
         }
-        if (typeof child !== 'undefined') {
-            el.appendChild(child);
-        }
         return el;
     }
 
-    createDiv(classname, child) {
-        return this.createElement('div', classname, child);
+    createDiv(classname) {
+        return this.createElement('div', classname);
     }
 
-    fixColumnCount(length) {
-        var count = Math.floor(Math.sqrt(length));
-        var cssProp = 'auto '.repeat(count).trim();
-        this.root.style.backgroundColor = "red";
+    fadeOut(element, callBack) {
+        element.style.opacity = "0";
+    }
+
+    turnOn(element) {
+        element.style.visibility = "visible";
+        element.style.width = "100%";
+        element.style.left = "0%";
+    }
+
+    turnOff(element) {
+        element.style.width = "0%";
+        element.style.left = "50%";
+    }
+
+    turnCardFront(cardImage, bgImage) {
+        memorygame.turnOff(bgImage);
+        window.setTimeout(function() {memorygame.turnOn(cardImage); }, 1000);
+    }
+
+    turnCardBack(fieldElement) {
+        var cardImage = fieldElement.querySelector('.memory-card');
+        var bgImage = fieldElement.querySelector('.memory-card-back');
+
+    }
+
+
+    fixColumnCount() {
+        var cssProp = 'auto '.repeat(this.fieldSize).trim();
+        //        this.root.style.backgroundColor = "red";
         this.root.style.gridTemplateColumns = cssProp;
     }
 
     onClickField(data) {
         var fieldElement = data.target.parentElement
         console.log(fieldElement);
-        fieldElement.style.visibility = "hidden";
+        var cardImage = fieldElement.querySelector('.memory-card');
+        var bgImage = fieldElement.querySelector('.memory-card-back');
+        //fieldElement.style.visibility = "hidden";
+        //memorygame.fadeOut(fieldElement);
+        memorygame.turnCardFront(cardImage, bgImage);
+    }
+
+    generateCardBack(index) {
+        var cb = this.createElement('img', 'memory-card-back');
+        cb.src = this.bgimage.src;
+        return cb;
     }
 
     generatePlayingField() {
@@ -56,13 +89,16 @@ class MemoryGame {
             imglist.push(element.cloneNode());
         };
         imglist.sort(this.shuffle);
-        //        console.log(imglist);
-        this.fixColumnCount(imglist.length);
+        console.log(imglist);
+        this.fixColumnCount(this.fieldSize);
         this.removeAllChildNodes(this.root);
         for (const element of imglist) {
-            var space = this.createDiv('memory-space', element);
+            var space = this.createDiv('memory-space');
             space.dataset.mgId = i;
             space.onclick = this.onClickField;
+            element.className = 'memory-card';
+            space.appendChild(element);
+            space.appendChild(this.generateCardBack(i));
             this.root.appendChild(space);
             i++;
         }
@@ -70,8 +106,9 @@ class MemoryGame {
 
     isValidGame() {
         var sqr = Math.sqrt(this.images.length * 2);
-        console.log(sqr);
-        return (Math.floor(sqr) == sqr);
+        this.fieldSize = Math.floor(sqr);
+        console.log(this.fieldSize);
+        return (this.fieldSize == sqr);
     }
 
     init() {
