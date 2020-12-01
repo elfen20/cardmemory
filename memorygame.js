@@ -13,6 +13,7 @@ class MemoryGame {
         this.images = this.root.querySelectorAll(".memory-img");
         this.transitionHide = "left " + this.turnSpeed + " ease-in, width " + this.turnSpeed + " ease-in";
         this.transitionShow = "left ".concat(this.turnSpeed, " ease-out ", this.turnSpeed, ", width ", this.turnSpeed, " ease-out ", this.turnSpeed);
+        this.transitionVanish = "opacity ".concat(this.turnSpeed, ", visibility ", this.turnSpeed, " linear ", this.turnSpeed);
     }
 
     shuffle(a, b) {
