@@ -1,10 +1,19 @@
+html {
+    height: 80%; /* <------------ */
+}
+
+body {
+    text-align: center;
+    height: 100%; /* <------------ */
+}
+
 .container {
     position: relative;
     user-select: none;
     background-image: url("images/bg_holz.jpg");
     background-size: cover;
-    width: 25em;
-    height: 25em;
+    width: 100%;
+    height: 100%;
     padding: 2px;
 }
 
@@ -53,6 +62,7 @@
 
 .memory-card-back {
     position: absolute; 
+    cursor: pointer;
     z-index: 2;
     width: 100%;
     height: 100%;
