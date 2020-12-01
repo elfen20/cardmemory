@@ -3,11 +3,20 @@
 
 class MemoryGame {
     constructor() {
+        this.turnSpeed = "0.5s";
+        this.waitTime = "1000";
+
         this.busy = true;
-        this.root = document.getElementById("memory-game");
-        this.bgimage = document.getElementById("memory-bg");
-        this.images = this.root.getElementsByClassName("memory-img");
+        this.root = document.querySelector("#memory-game");
+        this.msgElement = document.querySelector("#memory-msg");
+        this.bgimage = document.querySelector("#memory-bg");
+        this.images = this.root.querySelectorAll(".memory-img");
+        this.transitionHide = "left " + this.turnSpeed + " ease-in, width " + this.turnSpeed + " ease-in";
+        this.transitionShow = "left ".concat(this.turnSpeed, " ease-out ", this.turnSpeed, ", width ", this.turnSpeed, " ease-out ", this.turnSpeed);
+        this.transitionVanish = "opacity ".concat(this.turnSpeed, " ease-in ", this.turnSpeed, ", visibilty ", this.turnSpeed);
         this.turnedFields = [];
+        this.remainingCards = 0;
+        this.usedTurns = 0;
     }
 
     shuffle(a, b) {
@@ -33,25 +42,16 @@ class MemoryGame {
     }
 
     turnToShow(element) {
-        element.style.transition = "left 1s ease-out 1s, width 1s ease-out 1s"
-//        element.style.visibility = "visible";
+        element.style.transition = memorygame.transitionShow;
         element.style.width = "100%";
         element.style.left = "0%";
     }
 
     turnToHide(element) {
-        element.style.transition = "left 1s ease-in, width 1s ease-in"
+        element.style.transition = memorygame.transitionHide;
         element.style.width = "0%";
         element.style.left = "50%";
     }
-
-/*
-    turnCard(elementToHide, elementToShow) {
-        memorygame.turnToHide(elementToHide);
-        memorygame.turnToShow(elementToShow);
-        window.setTimeout(function() {memorygame.checkGame(); }, 1000);
-    }
-    */
 
     showCard(fieldElement) {
         var cardImage = fieldElement.querySelector('.memory-card');
@@ -68,22 +68,24 @@ class MemoryGame {
         memorygame.turnToShow(bgImage);
     }
 
+    hideField(fieldElement) {
+        fieldElement.style.transition = memorygame.transitionVanish;
+        fieldElement.style.opacity = "0";
+        fieldElement.style.visibility = "hidden";
+    }
+
 
     fixColumnCount() {
         var cssProp = 'auto '.repeat(this.fieldSize).trim();
-        //        this.root.style.backgroundColor = "red";
         this.root.style.gridTemplateColumns = cssProp;
     }
 
     onClickField(data) {
         if (memorygame.busy) return;
-        var fieldElement = data.target.parentElement
-        console.log(fieldElement);
+        var fieldElement = data.target.parentElement;
         if ((memorygame.turnedFields.length == 1) && (memorygame.turnedFields[0] == fieldElement)) return;
         memorygame.turnedFields.push(fieldElement);
-        memorygame.busy = true;        
-        //fieldElement.style.visibility = "hidden";
-        //memorygame.fadeOut(fieldElement);
+        memorygame.busy = true;
         memorygame.showCard(fieldElement);
     }
 
@@ -96,12 +98,12 @@ class MemoryGame {
     generatePlayingField() {
         var imglist = [];
         var i = 0;
+        this.remainingCards = this.images.length;
         for (const element of this.images) {
             imglist.push(element);
             imglist.push(element.cloneNode());
-        };
+        }
         imglist.sort(this.shuffle);
-        console.log(imglist);
         this.fixColumnCount(this.fieldSize);
         this.removeAllChildNodes(this.root);
         for (const element of imglist) {
@@ -116,41 +118,85 @@ class MemoryGame {
         }
     }
     resetTurnedCards() {
-        memorygame.hideCard(memorygame.turnedFields[0]);
-        memorygame.hideCard(memorygame.turnedFields[1]);
-        window.setTimeout(function() { 
+        for (const field of memorygame.turnedFields) {
+            memorygame.hideCard(field);
+        }
+        window.setTimeout(function () {
             memorygame.turnedFields = [];
-            memorygame.busy=false; 
-        }, 1000);
+            memorygame.returnToPlay();
+        }, memorygame.waitTime);
     }
 
+    hideFoundCards() {
+        for (const field of memorygame.turnedFields) {
+            memorygame.hideField(field);
+        }
+        memorygame.remainingCards--;
+        window.setTimeout(function () {
+            memorygame.turnedFields = [];
+            memorygame.returnToPlay();
+        }, memorygame.waitTime);
+    }
+
+    returnToPlay() {
+        memorygame.writeGameStatus();
+        memorygame.busy = false;
+    }
+
+    writeGameStatus() {
+        if (memorygame.turnedFields.length == 1) {
+            memorygame.setGameMsg("Wähle eine weitere Karte!");
+        } else {
+            if (memorygame.remainingCards == 0) {
+                memorygame.setGameMsg("Du hast gewonnen! Noch ein Spiel ?");
+            } else {
+                memorygame.setGameMsg(" Du hast ".concat(memorygame.remainingCards," übrige Kartenpaare und bis jetzt ", memorygame.usedTurns, " Versuch(e) gebraucht."));
+            }
+        }
+    }
+
+    setGameMsg(text) {
+        memorygame.msgElement.textContent = text;
+    }
 
     checkGame() {
         if (memorygame.turnedFields.length !== 2) {
-            memorygame.busy = false;
+            memorygame.returnToPlay();
             return;
-        } 
-        // no match
-        window.setTimeout(function() { 
-            memorygame.resetTurnedCards();
-        }, 3000);
+        }
+        memorygame.usedTurns++;
+        var src1 = memorygame.turnedFields[0].querySelector('.memory-card').src;
+        var src2 = memorygame.turnedFields[1].querySelector('.memory-card').src;
+        if (src1 == src2) {
+            // match
+            memorygame.setGameMsg("Treffer!");
+            window.setTimeout(function () {
+                memorygame.hideFoundCards();
+            }, memorygame.waitTime);
+        } else {
+            // no match
+            memorygame.setGameMsg("diese Karten passen nicht zusammen...");
+            window.setTimeout(function () {
+                memorygame.resetTurnedCards();
+            }, memorygame.waitTime);
+        }
     }
 
     isValidGame() {
-        var sqr = Math.sqrt(this.images.length * 2);
+        var sqr = Math.sqrt(memorygame.images.length * 2);
         this.fieldSize = Math.floor(sqr);
-        console.log(this.fieldSize);
-        return (this.fieldSize == sqr);
+        return (this.fieldSize > 1);
     }
 
     init() {
         if (this.isValidGame()) {
             this.generatePlayingField();
             this.bgimage.style.visibility = "hidden";
+            this.setGameMsg("Bereit, wenn du es bist! Wähle eine Karte!");
             this.busy = false;
         }
         else {
-            console.log("Error: Image count has to be a half of a square number!")
+            console.log("Error: You need at least 2 Images!");
         }
     }
 }
@@ -158,7 +204,6 @@ class MemoryGame {
 const memorygame = new MemoryGame();
 
 Promise.all(Array.from(document.images).filter(img => !img.complete).map(img => new Promise(resolve => { img.onload = img.onerror = resolve; }))).then(() => {
-    console.log('images finished loading');
     memorygame.init();
-    console.log(memorygame);
+//    console.log(memorygame);
 });
