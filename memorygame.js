@@ -13,10 +13,6 @@ class MemoryGame {
         this.images = this.root.querySelectorAll(".memory-img");
         this.transitionHide = "left " + this.turnSpeed + " ease-in, width " + this.turnSpeed + " ease-in";
         this.transitionShow = "left ".concat(this.turnSpeed, " ease-out ", this.turnSpeed, ", width ", this.turnSpeed, " ease-out ", this.turnSpeed);
-        this.transitionVanish = "opacity ".concat(this.turnSpeed, ", visibility ", this.turnSpeed, " linear ", this.turnSpeed);
-        this.turnedFields = [];
-        this.remainingCards = 0;
-        this.usedTurns = 0;
     }
 
     shuffle(a, b) {
@@ -150,7 +146,7 @@ class MemoryGame {
             if (memorygame.remainingCards == 0) {
                 memorygame.setGameMsg("Du hast gewonnen! Noch ein Spiel ?");
             } else {
-                memorygame.setGameMsg(" Du hast ".concat(memorygame.remainingCards," übrige Kartenpaare und bis jetzt ", memorygame.usedTurns, " Versuch(e) gebraucht."));
+                memorygame.setGameMsg(" Du hast ".concat(memorygame.remainingCards," übrige(s) Kartenpaar(e) und bis jetzt ", memorygame.usedTurns, " Versuch(e) gebraucht."));
             }
         }
     }
@@ -188,8 +184,19 @@ class MemoryGame {
         return (this.fieldSize > 1);
     }
 
+    reset() {
+        memorygame.turnedFields = [];
+        memorygame.remainingCards = 0;
+        memorygame.usedTurns = 0;
+        for (const img of memorygame.images) {
+            img.style.width = "0%";
+            img.style.left = "50%";
+        }
+    }
+
     init() {
         if (this.isValidGame()) {
+            memorygame.reset();
             this.generatePlayingField();
             this.bgimage.style.visibility = "hidden";
             this.setGameMsg("Bereit, wenn du es bist! Wähle eine Karte!");
@@ -204,6 +211,10 @@ class MemoryGame {
 const memorygame = new MemoryGame();
 
 Promise.all(Array.from(document.images).filter(img => !img.complete).map(img => new Promise(resolve => { img.onload = img.onerror = resolve; }))).then(() => {
+    document.querySelector("#memory-reset").onclick = function() {
+        if (memorygame.busy) return;
+        memorygame.init();
+    };
     memorygame.init();
 //    console.log(memorygame);
 });
